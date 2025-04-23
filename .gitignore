@@ -1,0 +1,4 @@
+*.xcodeproj/*
+*.xcconfig
+bin/*.app/*
+.DS_Store
