@@ -21,7 +21,12 @@ void SpaceShip::integrate() {
 	dt = (dt > 0.0f && !std::isinf(dt)) ? dt : 1.0f / 60.0f;
 
 	// update position based on velocity
-	ofVec3f movingPosition = getPosition() += (velocity * dt);
+	// ofVec3f movingPosition = getPosition() += (velocity * dt); // ERROR CULPRIT
+    
+    ofVec3f movingPosition = getPosition(); // Get current position
+    movingPosition += (velocity * dt);      // Add velocity * dt to it
+    setPosition(movingPosition.x, movingPosition.y, movingPosition.z); // Set the new position
+    
 	setPosition(movingPosition.x, movingPosition.y, movingPosition.z);
 	// update acceleration with accumulated paritcles forces
 	// remember :  (f = ma) OR (a = 1/m * f)

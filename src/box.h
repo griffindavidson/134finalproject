@@ -59,7 +59,7 @@ class Box {
 	}
 
 	Vector3 center() {
-		return ((max() - min()) / 2 + min());
+		return ((max() - min()) / 2.0f + min());
 	}
 };
 

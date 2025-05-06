@@ -19,7 +19,7 @@ void ofApp::resolveCollision() {
 	if (colBoxList.size() < 10) return; // if there is no collision then return
 	vector<int> collisionVertices;
 	// collisionVertices.reserve(colBoxList.size() * 2);
-	ofMesh& mesh = mars.getMesh(0);
+	ofMesh mesh = mars.getMesh(0);
 	if(bLoadMoonTerrain) mesh = moonTerrain.getMesh(0);
 	// this for loop is the laggy part, don't have time to optimize for collisions
 	if (!bLoadMoonTerrain) {
@@ -218,7 +218,7 @@ void ofApp::draw() {
 
 	// if point selected, draw a sphere
 	//
-	if (pointSelected) {
+	if (bPointSelected) {
 		ofVec3f p;
 		if(!bLoadMoonTerrain) p = octree.mesh.getVertex(selectedNode.points[0]);
 		else p = moonOctree.mesh.getVertex(selectedNode.points[0]);
