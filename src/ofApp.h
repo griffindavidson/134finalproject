@@ -4,6 +4,7 @@
 #include "ofxGui.h"
 #include  "ofxAssimpModelLoader.h"
 #include "Octree.h"
+#include "SpaceShip.h"
 #include <glm/gtx/intersect.hpp>
 
 
@@ -24,7 +25,7 @@ class ofApp : public ofBaseApp{
 		void mouseEntered(int x, int y);
 		void mouseExited(int x, int y);
 		void windowResized(int w, int h);
-
+		// given starter functions
 		void dragEvent2(ofDragInfo dragInfo);
 		void dragEvent(ofDragInfo dragInfo);
 		void gotMessage(ofMessage msg);
@@ -38,9 +39,11 @@ class ofApp : public ofBaseApp{
 		bool mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point);
 		bool raySelectWithOctree(ofVec3f &pointRet);
 		glm::vec3 getMousePointOnPlane(glm::vec3 p , glm::vec3 n);
-
+		// camera
 		ofEasyCam cam;
-		ofxAssimpModelLoader mars, lander;
+		ofEasyCam* theCam; // use this as the main camera and switch the pointer as needed
+		ofxAssimpModelLoader mars;
+		SpaceShip lander;
 		ofLight light;
 		Box boundingBox, landerBounds;
 		Box testBox;
@@ -77,9 +80,12 @@ class ofApp : public ofBaseApp{
 		const float selectionRange = 4.0;
 
 		// Zander modificiations
-		void resolveCollision();
+		ofVec3f resolveCollision(bool& killLander);
 		bool bResolveCollisions = false;
 		bool bLoadMoonTerrain = false;
 		Octree moonOctree;
 		ofxAssimpModelLoader moonTerrain;
+		map<int, bool> keymap;
+		int frameCounter;
+		int calculationDelay;
 };

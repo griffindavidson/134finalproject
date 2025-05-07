@@ -15,8 +15,8 @@
 
 // Zander Collision Resolution
 // returns the target position the spacecraft should move toward
-void ofApp::resolveCollision() {
-	if (colBoxList.size() < 10) return; // if there is no collision then return
+ofVec3f ofApp::resolveCollision(bool& killLander) {
+	// if (colBoxList.size() < 10) return ofVec3f(0,0,0); // if there is no collision then return
 	vector<int> collisionVertices;
 	// collisionVertices.reserve(colBoxList.size() * 2);
 	ofMesh mesh = mars.getMesh(0);
@@ -39,23 +39,10 @@ void ofApp::resolveCollision() {
 	}
 	float bounce = 2; // defines how much force the ground exerts on the spacecraft
 	ofVec3f landerNextPos(0, 0, 0);
-	landerNextPos = lander.getPosition() + (sum.getNormalized() * bounce);
-	ofVec3f movingPosition = lander.getPosition();
-	// interpolate is used for smooth movement (less jitter) however I believe 
-	// the issue is with the speed of this function being too slow for many collided boxes
-	float lerpSpeed = 0.1f; 
-	movingPosition.interpolate(landerNextPos, lerpSpeed);
-	lander.setPosition(movingPosition.x, movingPosition.y, movingPosition.z);
-	
-	// clear and recalculate the collision boxes for the next iteration
-	ofVec3f min = lander.getSceneMin() + lander.getPosition();
-	ofVec3f max = lander.getSceneMax() + lander.getPosition();
-
-	Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
-
-	colBoxList.clear();
-	if (!bLoadMoonTerrain) octree.intersect(bounds, octree.root, colBoxList);
-	else moonOctree.intersect(bounds, moonOctree.root, colBoxList);
+	landerNextPos = lander.getPosition() + ((sum / collisionVertices.size())* bounce);
+	float minCrashSpeed = 30;
+	killLander = lander.velocity.length() > minCrashSpeed;
+	return landerNextPos;
 }
 
 //--------------------------------------------------------------
@@ -87,6 +74,11 @@ void ofApp::setup(){
 	moonTerrain.loadModel("geo/moon-houdini.obj");
 	moonTerrain.setScaleNormalization(false);
 
+	lander.loadModel("geo/lander.obj");
+	lander.setScaleNormalization(false);
+	lander.setPosition(0, 10, 0);
+	bLanderLoaded = true;
+
 	// create sliders for testing
 	//
 	gui.setup();
@@ -101,11 +93,11 @@ void ofApp::setup(){
 	cout << "time to build the tree (millis):" << (end - start) << endl;
 	cout << "Number of Verts: " << mars.getMesh(0).getNumVertices() << endl;
 
-	cout << "Building the moon octree ... " << endl;
+	/*cout << "Building the moon octree ... " << endl;
 	start = ofGetElapsedTimeMillis();
 	moonOctree.create(moonTerrain.getMesh(0), 20);
 	end = ofGetElapsedTimeMillis();
-	cout << "moon octree finished (millis): " << (end - start) << endl;
+	cout << "moon octree finished (millis): " << (end - start) << endl;*/
 
 	testBox = Box(Vector3(3, 3, 0), Vector3(5, 5, 2));
 
@@ -115,9 +107,42 @@ void ofApp::setup(){
 // incrementally update scene (animation)
 //
 void ofApp::update() {
-	if (bResolveCollisions) {
-		resolveCollision();
+	frameCounter++;
+	lander.updatePlayer();
+	//// clear and recalculate the collision boxes for the next iteration
+	ofVec3f min = lander.getSceneMin() + lander.getPosition();
+	ofVec3f max = lander.getSceneMax() + lander.getPosition();
+
+	Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
+
+	colBoxList.clear();
+	if (!bLoadMoonTerrain) octree.intersect(bounds, octree.root, colBoxList);
+	else moonOctree.intersect(bounds, moonOctree.root, colBoxList);
+	ofVec3f crashVector;
+	bool crashed = false;
+	if (colBoxList.size() > 10) {
+		if (bResolveCollisions) {
+			// crashVector = resolveCollision(crashed);
+			if (crashed) {
+				ofVec3f currentPosition = lander.getPosition();
+				lander.explode(currentPosition, crashVector);
+				// currentState = GAME_OVER; implement game state
+				return;
+			}
+			bResolveCollisions = false;
+			frameCounter = 0;
+		}
+		if (frameCounter > calculationDelay) { bResolveCollisions = true; }
 	}
+	// player input
+	if (keymap[' ']) { lander.thrustUp();}
+	if (keymap[OF_KEY_UP] || keymap['w']) {lander.moveForward();}
+	if (keymap[OF_KEY_LEFT] || keymap['a']) lander.moveLeft();
+	if (keymap[OF_KEY_RIGHT] || keymap['d']) lander.moveRight();
+	if (keymap[OF_KEY_DOWN] || keymap['s']) lander.moveBackward();
+	if (keymap['o']) lander.rotateLeft();
+	if (keymap['p']) lander.rotateRight();
+	
 }
 //--------------------------------------------------------------
 void ofApp::draw() {
@@ -147,6 +172,8 @@ void ofApp::draw() {
 		// ofMesh mesh; Zander: Why is this here?
 		if (bLanderLoaded) {
 			lander.drawFaces();
+			
+			// ofDrawArrow(lander.getPosition(), lander.getPosition() + lander.heading()); // heading debug draw, works
 			if (!bTerrainSelected) drawAxis(lander.getPosition());
 			if (bDisplayBBoxes) {
 				ofNoFill();
@@ -295,9 +322,9 @@ void ofApp::keyPressed(int key) {
 	case 'r':
 		cam.reset();
 		break;
-	case 's':
+	/*case 's':
 		savePicture();
-		break;
+		break;*/
 	case 't':
 		setCameraTarget();
 		break;
@@ -308,9 +335,9 @@ void ofApp::keyPressed(int key) {
 		break;
 	case 'V':
 		break;
-	case 'w':
+	/*case 'w':
 		toggleWireframeMode();
-		break;
+		break;*/
 	case OF_KEY_ALT:
 		cam.enableMouseInput();
 		bAltKeyDown = true;
@@ -325,6 +352,7 @@ void ofApp::keyPressed(int key) {
 	default:
 		break;
 	}
+	keymap[key] = true;
 }
 
 void ofApp::toggleWireframeMode() {
@@ -356,6 +384,7 @@ void ofApp::keyReleased(int key) {
 		break;
 
 	}
+	keymap[key] = false;
 }
 
 
@@ -374,9 +403,7 @@ void ofApp::mousePressed(int x, int y, int button) {
 	//
 	if (cam.getMouseInputEnabled()) return;
 
-	// if moving camera, don't allow mouse interaction
-//
-	if (cam.getMouseInputEnabled()) return;
+	
 
 	// if rover is loaded, test for selection
 	//
@@ -447,14 +474,15 @@ void ofApp::mouseDragged(int x, int y, int button) {
 		lander.setPosition(landerPos.x, landerPos.y, landerPos.z);
 		mouseLastPos = mousePos;
 
-		ofVec3f min = lander.getSceneMin() + lander.getPosition();
+		// part of the starter code, moved to update function 
+		/*ofVec3f min = lander.getSceneMin() + lander.getPosition();
 		ofVec3f max = lander.getSceneMax() + lander.getPosition();
 
 		Box bounds = Box(Vector3(min.x, min.y, min.z), Vector3(max.x, max.y, max.z));
 
 		colBoxList.clear();
 		if(!bLoadMoonTerrain)octree.intersect(bounds, octree.root, colBoxList);
-		else moonOctree.intersect(bounds, moonOctree.root,colBoxList);
+		else moonOctree.intersect(bounds, moonOctree.root,colBoxList);*/
 
 		/*if (bounds.overlap(testBox)) {
 			cout << "overlap" << endl;
@@ -557,25 +585,27 @@ void ofApp::savePicture() {
 // support drag-and-drop of model (.obj) file loading.  when
 // model is dropped in viewport, place origin under cursor
 //
-void ofApp::dragEvent2(ofDragInfo dragInfo) {
-
-	ofVec3f point;
-	mouseIntersectPlane(ofVec3f(0, 0, 0), cam.getZAxis(), point);
-	if (lander.loadModel(dragInfo.files[0])) {
-		lander.setScaleNormalization(false);
-//		lander.setScale(.1, .1, .1);
-	//	lander.setPosition(point.x, point.y, point.z);
-		lander.setPosition(1, 1, 0);
-
-		bLanderLoaded = true;
-		for (int i = 0; i < lander.getMeshCount(); i++) {
-			bboxList.push_back(Octree::meshBounds(lander.getMesh(i)));
-		}
-
-		cout << "Mesh Count: " << lander.getMeshCount() << endl;
-	}
-	else cout << "Error: Can't load model" << dragInfo.files[0] << endl;
-}
+// Zander: I don't think this is used anywhere whatsoever, dragevent2 does the same thing under the mouse
+//void ofApp::dragEvent2(ofDragInfo dragInfo) {
+//
+//	ofVec3f point;
+//	mouseIntersectPlane(ofVec3f(0, 0, 0), cam.getZAxis(), point);
+//	if (lander.loadModel(dragInfo.files[0])) {
+//		lander.setScaleNormalization(false);
+////		lander.setScale(.1, .1, .1);
+//	//	lander.setPosition(point.x, point.y, point.z);
+//		lander.setPosition(1, 1, 0);
+//
+//		bLanderLoaded = true;
+//		for (int i = 0; i < lander.getMeshCount(); i++) { 
+//			// Zander: is bbox the different bounding boxes of the lander? cuz it's made of different combined meshes?
+//			bboxList.push_back(Octree::meshBounds(lander.getMesh(i)));
+//		}
+//
+//		cout << "Mesh Count: " << lander.getMeshCount() << endl;
+//	}
+//	else cout << "Error: Can't load model" << dragInfo.files[0] << endl;
+//}
 
 bool ofApp::mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point) {
 	ofVec2f mouse(mouseX, mouseY);

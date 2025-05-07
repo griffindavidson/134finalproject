@@ -8,7 +8,7 @@ class SpaceShip : public ofxAssimpModelLoader {
 public:
 	// use position from Model Loader
 	float fuel; // represents the time left for fuel if < 0 then no fuel left use "ofGetElapsedTime" calls
-	float thrustPower; // defines how powerful the thrust is;
+	float  thrustPower = 30; // defines how powerful the thrust is;
 	bool thrusting; // use this to decrement the fuel Example: if thrusting fuel -1;
 	ofEasyCam cam1, cam2, cam3; // camera views of the lander Example: straight down, orbit, first person etc.
 	ofLight light1, light2, light3; // lights on the lander that follow it
@@ -19,7 +19,8 @@ public:
 	ofVec3f velocity;
 	ofVec3f acceleration;
 	ofVec3f forces;
-	float	damping;
+	float	damping = 0.99;
+	float rotation = 0.0f; // rotation in degrees
 	// SoundManager& sm; if we need sound
 
 	// constructors
@@ -41,22 +42,22 @@ public:
 	void moveRight();
 	void moveBackward();
 	void thrustUp(); // gravity is automatic but upwards needs to be controlled
+	void rotateRight(); // rotational force movement for the header
+	void rotateLeft();
 	void addForce(ofVec3f force);
 
 	// do we need to implement rotation?
-	float angularVelocity;  // radians/sec
-	float torque;           // rotational force
+	float angularVelocity = 0;  // radians/sec
+	float torque = 0;           // rotational force
 	float angularDamping = 0.99f; // damping to slow rotation over time
-
+	void integrateRotation(); // integrate the rotation input
 	bool alive() { return isAlive; }
 	void addScore(); // add score to the player when they successfully land in a landing zone
-	void explode(); // use this to animate the lander exploding when the player fails and dies
+	void explode(ofVec3f currentPos, ofVec3f crashVector); // use this to animate the lander exploding when the player fails and dies
 	void reset(); // reset the player to their starting position and values to restart the game
 
-	// For Reference this was the heading function in the 2d games
-	//glm::vec3 heading() {
-	//glm::mat4 rot1 = glm::rotate(glm::mat4(1.0), glm::radians(rotation), glm::vec3(0, 0, 1));
-	//return glm::normalize(rot1 * glm::vec4(glm::vec3(0, -1, 0), 1));
+	glm::vec3 heading(); // returns the heading of the player model
+	
 
 
 };
