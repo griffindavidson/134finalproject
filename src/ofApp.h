@@ -2,90 +2,62 @@
 
 #include "ofMain.h"
 #include "ofxGui.h"
-#include  "ofxAssimpModelLoader.h"
-#include "Octree.h"
-#include "SpaceShip.h"
-#include <glm/gtx/intersect.hpp>
-
-
+#include "DynamicObject.h"
+#include "ofxAssimpModelLoader.h"
+#include "Octree/Octree.h"
 
 class ofApp : public ofBaseApp{
 
 	public:
-		void setup();
-		void update();
-		void draw();
+		void setup() override;
+		void update() override;
+		void draw() override;
+		void exit() override;
 
-		void keyPressed(int key);
-		void keyReleased(int key);
-		void mouseMoved(int x, int y );
-		void mouseDragged(int x, int y, int button);
-		void mousePressed(int x, int y, int button);
-		void mouseReleased(int x, int y, int button);
-		void mouseEntered(int x, int y);
-		void mouseExited(int x, int y);
-		void windowResized(int w, int h);
-		// given starter functions
-		void dragEvent2(ofDragInfo dragInfo);
-		void dragEvent(ofDragInfo dragInfo);
-		void gotMessage(ofMessage msg);
-		void drawAxis(ofVec3f);
-		void initLightingAndMaterials();
-		void savePicture();
-		void toggleWireframeMode();
-		void togglePointsDisplay();
-		void toggleSelectTerrain();
-		void setCameraTarget();
-		bool mouseIntersectPlane(ofVec3f planePoint, ofVec3f planeNorm, ofVec3f &point);
-		bool raySelectWithOctree(ofVec3f &pointRet);
-		glm::vec3 getMousePointOnPlane(glm::vec3 p , glm::vec3 n);
-		// camera
-		ofEasyCam cam;
-		ofEasyCam* theCam; // use this as the main camera and switch the pointer as needed
-		ofxAssimpModelLoader mars;
-		SpaceShip lander;
-		ofLight light;
-		Box boundingBox, landerBounds;
-		Box testBox;
-		vector<Box> colBoxList;
-		bool bLanderSelected = false;
-		Octree octree;
-		TreeNode selectedNode;
-		glm::vec3 mouseDownPos, mouseLastPos;
-		bool bInDrag = false;
-
-
-		ofxIntSlider numLevels;
-		ofxPanel gui;
-
-		bool bAltKeyDown;
-		bool bCtrlKeyDown;
-		bool bWireframe;
-		bool bDisplayPoints;
-		bool bPointSelected;
-		bool bHide;
-		bool pointSelected = false;
-		bool bDisplayLeafNodes = false;
-		bool bDisplayOctree = false;
-		bool bDisplayBBoxes = false;
-		
-		bool bLanderLoaded;
-		bool bTerrainSelected;
-	
-		ofVec3f selectedPoint;
-		ofVec3f intersectPoint;
-
-		vector<Box> bboxList;
-
-		const float selectionRange = 4.0;
-
-		// Zander modificiations
-		ofVec3f resolveCollision(bool& killLander);
-		bool bResolveCollisions = false;
-		bool bLoadMoonTerrain = false;
-		Octree moonOctree;
-		ofxAssimpModelLoader moonTerrain;
-		map<int, bool> keymap;
-		int frameCounter;
-		int calculationDelay;
+		void keyPressed(int key) override;
+		void keyReleased(int key) override;
+		void mouseMoved(int x, int y ) override;
+		void mouseDragged(int x, int y, int button) override;
+		void mousePressed(int x, int y, int button) override;
+		void mouseReleased(int x, int y, int button) override;
+		void mouseScrolled(int x, int y, float scrollX, float scrollY) override;
+		void mouseEntered(int x, int y) override;
+		void mouseExited(int x, int y) override;
+		void windowResized(int w, int h) override;
+		void dragEvent(ofDragInfo dragInfo) override;
+		void gotMessage(ofMessage msg) override;
+    
+        float getAltitude();
+    
+        map<int, bool> keymap;
+    
+        void initLightingAndMaterials();
+        void drawAxis(ofVec3f location);
+        float getVerticalDistanceToTerrain(ofVec3f roverPos, const ofMesh& terrainMesh);
+    
+        ofxAssimpModelLoader moonTerrain;
+        Octree octree;
+    
+        Ship rover = Ship();
+    
+        void updateCameras();
+        
+        ofEasyCam* theCam;
+        int camID = 2;
+        ofEasyCam cam; // id
+        ofEasyCam rover3rdPersonCam; //id 1
+        ofEasyCam rover1stPersonCam; // id 2
+        ofEasyCam roverTopDownCam; // id 3
+    
+        bool lightingEnabled = true;
+        bool useWireframe = false;
+        bool showOriginCube = false;
+        bool showDebugSphere = false;
+    
+        bool hideGUI = false;
+        ofxPanel gui;
+        ofParameter<int> octreeLevels;
+        ofxLabel fps;
+        ofxLabel altitudeLabel;
+        ofxLabel thrust;
 };
