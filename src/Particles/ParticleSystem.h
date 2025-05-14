@@ -10,6 +10,8 @@
 class ParticleForce {
 public:
 	virtual void updateForce(Particle *) = 0;
+    bool applyOnce = false;
+    bool applied = false;
 };
 
 class ParticleSystem {
@@ -18,6 +20,7 @@ public:
 	void addForce(ParticleForce *);
 	void remove(int);
 	void update();
+    void reset();
 	int removeNear(const ofVec3f & point, float dist);
 	void draw();
     void draw(ofShader &shader);
@@ -41,4 +44,11 @@ class TurbulenceForce : public ParticleForce {
 public:
 	TurbulenceForce(const ofVec3f & min, const ofVec3f &max);
 	void updateForce(Particle *);
+};
+
+class ImpulseRadialForce : public ParticleForce {
+    float magnitude;
+    public:
+    ImpulseRadialForce(float magnitude);
+    void updateForce(Particle *);
 };

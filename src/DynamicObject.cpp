@@ -128,7 +128,7 @@ Ship::Ship() : DynamicObject("geo/lander.obj") {
     engineSound.setLoop(true);
     
     engine.start();
-    engine.visible = true;
+    engine.visible = false;
     engine.setVelocity(glm::vec3(0, -20, 0));
     engine.setParticleRadius(5);
 }

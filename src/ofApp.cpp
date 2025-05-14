@@ -180,6 +180,18 @@ void ofApp::update(){
                     landingHasCrashed = true;
                     hasLanded = true;
                     
+                    rover.engine.sys->addForce(new ImpulseRadialForce(1000.0));
+                    
+                    rover.engine.setEmitterType(RadialEmitter);
+                    rover.engine.setParticleRadius(2.5);
+                    rover.engine.setVelocity(ofVec3f(0, 0, 0));
+                    rover.engine.setGroupSize(1000);
+                    rover.engine.setOneShot(true);
+                    rover.engine.setPosition(rover.position);
+                    
+                    rover.engine.sys->reset();
+                    rover.engine.start();
+                    
                 }
                 if (rover.velocity.y >= -1.5f && !hasLanded) {
                     cout << "Landed on terrain at Y = " << terrainTopY << endl;
@@ -224,13 +236,15 @@ void ofApp::draw(){
             ofSetColor(200, 200, 200);
             moonTerrain.drawFaces();
             if (!landingHasCrashed) rover.draw();
-            ofDisableLighting(); 
+            else rover.engine.draw();
+            ofDisableLighting();
         }
         else {
             ofDisableLighting();
             ofSetColor(255, 160, 0);
             moonTerrain.drawFaces();
             if (!landingHasCrashed) rover.draw();
+            else rover.engine.draw();
         }
     }
     
@@ -274,6 +288,15 @@ void ofApp::keyPressed(int key){
             rover.velocity.set(0, 0, 0);
             rover.angularVel = 0;
             rover.thrust = 5;
+            rover.engine.setEmitterType(DirectionalEmitter);
+            rover.engine.setParticleRadius(5);
+            rover.engine.setVelocity(glm::vec3(0, -20, 0));
+            rover.engine.setGroupSize(1);
+            rover.engine.setOneShot(false);
+            rover.engine.fired = false;
+            rover.engine.sys->forces.clear();
+            rover.engine.sys->addForce(new GravityForce(glm::vec3(0, -7, 0)));
+            rover.engine.sys->addForce(new TurbulenceForce(glm::vec3(-3), glm::vec3(3)));
             rover.pause();
             break;
         }
