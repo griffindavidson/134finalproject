@@ -60,6 +60,10 @@ void ofApp::setup(){
     gui.add(fps.setup("FPS", ""));
     gui.add(altitudeLabel.setup("Altitude", ""));
     gui.add(thrust.setup("Thrust", ""));
+    gui.add(moveLabel.setup("WASD", "Move"));
+    gui.add(rotateLabel.setup("Q/E", "Rotate"));
+    gui.add(toggleCam.setup("C", "Toggle Cameras"));
+    gui.add(pauseLabel.setup("ESC", "Pause"));
     
     //cout << "Root box: (" << ofToString(octree.root.box.min().x()) << "," << ofToString(octree.root.box.min().y()) << ", " << ofToString(octree.root.box.min().z()) << ")" << " to " << "(" << ofToString(octree.root.box.max().x()) << "," << ofToString(octree.root.box.max().y()) << ", " << ofToString(octree.root.box.max().z()) << ")" << endl;
     //cout << "Number of children: " << ofToString(octree.root.children.size()) << endl;

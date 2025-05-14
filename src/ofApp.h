@@ -60,4 +60,9 @@ class ofApp : public ofBaseApp{
         ofxLabel fps;
         ofxLabel altitudeLabel;
         ofxLabel thrust;
+    
+        ofxLabel moveLabel;
+        ofxLabel rotateLabel;
+        ofxLabel toggleCam;
+        ofxLabel pauseLabel;
 };
