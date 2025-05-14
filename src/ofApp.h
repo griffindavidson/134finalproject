@@ -65,4 +65,8 @@ class ofApp : public ofBaseApp{
         ofxLabel rotateLabel;
         ofxLabel toggleCam;
         ofxLabel pauseLabel;
+        ofxLabel velocityLabel;
+    
+        bool hasLanded = false; // boolean saving if the rover has landed yet or not
+        bool landingHasCrashed = false; // landing type: true = crashed; false = successful
 };

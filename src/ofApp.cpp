@@ -29,26 +29,25 @@ void ofApp::setup(){
     octree.bUseFaces = true;
     octree.create(moonTerrain.getMesh(0), 20);
     
-    rover.object.setPosition(0, 10, 0);
-    rover.object.setScale(0.05, 0.05, 0.05);
+    rover.scale.set(0.05);
     rover.setGlobalForce(ofVec3f(0, -1.625, 0));
     
-    rover3rdPersonCam.setPosition(-50, 45, -50);
+    rover3rdPersonCam.setPosition(-75, 95, -75);
     rover3rdPersonCam.lookAt(rover.position);
     rover3rdPersonCam.setNearClip(0.1);
     rover3rdPersonCam.setFarClip(1000);
-    rover3rdPersonCam.setFov(60);
+    rover3rdPersonCam.setFov(65.5);
     rover3rdPersonCam.disableMouseInput();
     
     float roverMiddleHeight = rover.object.getSceneCenter().y;
-    rover1stPersonCam.setPosition(0, roverMiddleHeight, 0);
+    rover1stPersonCam.setPosition(0, roverMiddleHeight + 50, 0);
     rover1stPersonCam.lookAt(glm::vec3(1, 0, 1)); // random direction for now, make it look at normal
     rover1stPersonCam.setNearClip(7.25);
     rover1stPersonCam.setFarClip(1000);
     rover1stPersonCam.setFov(50);
     rover1stPersonCam.disableMouseInput();
     
-    roverTopDownCam.setPosition(0, 110, 0);
+    roverTopDownCam.setPosition(0, 160, 0);
     roverTopDownCam.lookAt(rover.position);
     roverTopDownCam.setNearClip(0);
     roverTopDownCam.setFarClip(1000);
@@ -64,6 +63,7 @@ void ofApp::setup(){
     gui.add(rotateLabel.setup("Q/E", "Rotate"));
     gui.add(toggleCam.setup("C", "Toggle Cameras"));
     gui.add(pauseLabel.setup("ESC", "Pause"));
+    gui.add(velocityLabel.setup("Velocity", ""));
     
     //cout << "Root box: (" << ofToString(octree.root.box.min().x()) << "," << ofToString(octree.root.box.min().y()) << ", " << ofToString(octree.root.box.min().z()) << ")" << " to " << "(" << ofToString(octree.root.box.max().x()) << "," << ofToString(octree.root.box.max().y()) << ", " << ofToString(octree.root.box.max().z()) << ")" << endl;
     //cout << "Number of children: " << ofToString(octree.root.children.size()) << endl;
@@ -102,6 +102,7 @@ void ofApp::update(){
     
     if (rover.thrust <= 0) rover.thrust = 0.0f;
     thrust = ofToString(rover.thrust / 5.0f * 100.0f) + "%";
+    velocityLabel = ofToString(rover.velocity.y) + "m/s";
     
     glm::vec3 forwardDir, rightDir;
 
@@ -173,7 +174,18 @@ void ofApp::update(){
             bool zOverlap = roverMaxXZ.y >= terrainMinXZ.y && roverMinXZ.y <= terrainMaxXZ.y;
 
             if (xOverlap && zOverlap) {
-                cout << "Collision with terrain at Y = " << terrainTopY << endl;
+                // Collision Impact detection
+                if (rover.velocity.y < -1.5f && !hasLanded) {
+                    cout << "Crash on terrain at Y = " << terrainTopY << endl;
+                    landingHasCrashed = true;
+                    hasLanded = true;
+                    
+                }
+                if (rover.velocity.y >= -1.5f && !hasLanded) {
+                    cout << "Landed on terrain at Y = " << terrainTopY << endl;
+                    landingHasCrashed = false;
+                    hasLanded = true;
+                }
 
                 float roverHeight = rmax.y() - rmin.y();
                 rover.position.y = terrainTopY; // or + roverHeight/2.0 if needed
@@ -211,14 +223,14 @@ void ofApp::draw(){
             ofEnableLighting();
             ofSetColor(200, 200, 200);
             moonTerrain.drawFaces();
-            rover.draw();
-            ofDisableLighting(); // Clean up after
+            if (!landingHasCrashed) rover.draw();
+            ofDisableLighting(); 
         }
         else {
             ofDisableLighting();
             ofSetColor(255, 160, 0);
             moonTerrain.drawFaces();
-            rover.draw();
+            if (!landingHasCrashed) rover.draw();
         }
     }
     
@@ -256,10 +268,13 @@ void ofApp::keyPressed(int key){
             break;
         }
         case 'r': {
-            // Reset camera
-            cam.reset();
-            cam.setDistance(50);
-            cout << "Camera reset" << endl;
+            hasLanded = false;
+            landingHasCrashed = false;
+            rover.position.set(0, 50, 0);
+            rover.velocity.set(0, 0, 0);
+            rover.angularVel = 0;
+            rover.thrust = 5;
+            rover.pause();
             break;
         }
         case 't': {

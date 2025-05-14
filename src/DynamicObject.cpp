@@ -35,16 +35,20 @@ void DynamicObject::applyRotationForce(int torque) {
 }
 
 void DynamicObject::update() {
-    if (paused) return;
-    DynamicObject::integrate();
-    DynamicObject::rotationIntegrate();
     object.setPosition(position.x, position.y, position.z);
     updateBounds();
+    if (paused) return;
+    integrate();
+    rotationIntegrate();
 }
 
+
 void DynamicObject::draw() {
+    ofPushMatrix();
+    object.setScale(scale.x, scale.y, scale.z);
     object.setRotation(0, angle, 0, 1, 0);
     object.drawFaces();
+    ofPopMatrix();
 }
 
 void DynamicObject::integrate() {
@@ -108,6 +112,8 @@ void DynamicObject::updateBounds() {
 
 Ship::Ship() : DynamicObject("geo/lander.obj") {
    // add particle emitter stuff here for thrust
+    position.set(0, 50, 0);
+    pause();
     thrust = 5;
     
     GravityForce *g = new GravityForce(glm::vec3(0, -7, 0));
@@ -128,10 +134,11 @@ Ship::Ship() : DynamicObject("geo/lander.obj") {
 }
 
 void Ship::update() {
+    engine.setPosition(position);
+    object.setPosition(position.x, position.y, position.z);
     if (paused && engine.started) engine.stop();
     if (!paused && !engine.started) engine.start();
     DynamicObject::update();
-    engine.setPosition(position);
     engine.update();
     ofSoundUpdate();
     // particle emitter stuff here too
