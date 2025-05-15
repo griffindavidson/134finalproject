@@ -47,7 +47,7 @@ void DynamicObject::update() {
 void DynamicObject::draw() {
     ofPushMatrix();
     object.setScale(scale.x, scale.y, scale.z);
-    object.setRotation(0, angle, 0, 1, 0);
+    object.setRotation(0, angle + 180, 0, 1, 0);
     object.drawFaces();
     ofPopMatrix();
 }
@@ -150,7 +150,7 @@ void Ship::initialize() {
     position.set(randomX, 150, randomZ);
     positionLocked = false;
     pause();
-    thrust = 5;
+    thrust = 10; // Zander: doubled fuel time after play testing
     
     // shared config for emitter + dynamics
     engine.setOneShot(false);

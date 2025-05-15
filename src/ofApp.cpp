@@ -24,7 +24,7 @@ void ofApp::setup()
     // Initialize lighting
     initLightingAndMaterials();
 
-    terrain.load("geo/gameTerrain.obj");
+    terrain.load("geo/gameTerrainV3.obj");
     terrain.setScaleNormalization(false);
     terrain.setPosition(0, 0, 0);
     octreeTerrain.bUseFaces = true;
@@ -124,7 +124,7 @@ void ofApp::update()
     // "beautifies" thrust so its not some tiny number below 0
     if (rover.thrust <= 0)
         rover.thrust = 0.0f;
-    thrust = ofToString(rover.thrust / 5.0f * 100.0f) + "%";
+    thrust = ofToString(rover.thrust / 10.0f * 100.0f) + "%";
     velocityLabel = ofToString(rover.velocity.y) + "m/s"; // to be removed
 
     // glm::vec3 forwardDir, rightDir;
@@ -200,7 +200,7 @@ void ofApp::update()
 
     if (octreePad1.intersect(rover.bounds, octreePad1.root, boxRtn))
     {
-        if (rover.velocity.y >= -1.5)
+        if (rover.velocity.y >= -15)
         {
             cout << "Landed on Pad 1 at Y = " << rover.bounds.min().y() << endl;
             landingHasCrashed = false;
@@ -219,7 +219,7 @@ void ofApp::update()
     }
     else if (octreePad2.intersect(rover.bounds, octreePad2.root, boxRtn))
     {
-        if (rover.velocity.y >= -1.5)
+        if (rover.velocity.y >= -15)
         {
             cout << "Landed on Pad 2 at Y = " << rover.bounds.min().y() << endl;
             landingHasCrashed = false;
@@ -238,7 +238,7 @@ void ofApp::update()
     }
     else if (octreePad3.intersect(rover.bounds, octreePad3.root, boxRtn))
     {
-        if (rover.velocity.y >= -1.5)
+        if (rover.velocity.y >= -15)
         {
             cout << "Landed on Pad 3 at Y = " << rover.bounds.min().y() << endl;
             landingHasCrashed = false;
@@ -292,7 +292,7 @@ void ofApp::draw()
             landingPad1.drawFaces();
             rover.draw();
             ofDrawArrow(rover.position, rover.position + rover.heading() * 40); // draws the rover heading
-            // ofDrawArrow();
+            
             rover.engine.draw();
             landingPad2.drawFaces();
             landingPad3.drawFaces();
@@ -383,9 +383,16 @@ void ofApp::keyPressed(int key)
             theCam = &rover1stPersonCam;
             break;
         }
-        else
+        else if (camID == 3)
         {
+            camID = 0;
+            theCam = &cam; // debugging free roam camera
+            theCam->enableMouseInput();
+            break;
+        }
+        else { // camID == 0, switch from debugging cam
             camID = 1;
+            theCam->disableMouseInput();
             theCam = &roverTopDownCam;
             break;
         }
