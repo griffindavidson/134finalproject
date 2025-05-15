@@ -29,14 +29,22 @@ void ofApp::setup(){
     octreeTerrain.bUseFaces = true;
     octreeTerrain.create(terrain.getMesh(0), 20);
     
-    loadModelAtPosition(landingPad1, "geo/gameLandingPadV1.obj", ofVec3f(50, 5, 50), landMesh1);
+    loadModelAtPosition(landingPad1, "geo/gameLandingPadV1.obj", ofVec3f(150, 8, 95), landMesh1);
     octreePad1.bUseFaces = true;
     octreePad1.create(landMesh1, 5);
+    
+    loadModelAtPosition(landingPad2, "geo/gameLandingPadV1.obj", ofVec3f(-200, 5, 75), landMesh2);
+    octreePad2.bUseFaces = true;
+    octreePad2.create(landMesh2, 5);
+    
+    loadModelAtPosition(landingPad3, "geo/gameLandingPadV1.obj", ofVec3f(0, 10, -250), landMesh3);
+    octreePad3.bUseFaces = true;
+    octreePad3.create(landMesh3, 5);
     
     rover.scale.set(0.05);
     rover.setGlobalForce(ofVec3f(0, -1.625, 0));
     
-    rover3rdPersonCam.setPosition(-75, 95, -75);
+    rover3rdPersonCam.setPosition(rover.position.x - 75, rover.position.y + 45, rover.position.y -75);
     rover3rdPersonCam.lookAt(rover.position);
     rover3rdPersonCam.setNearClip(0.1);
     rover3rdPersonCam.setFarClip(1000);
@@ -44,14 +52,14 @@ void ofApp::setup(){
     rover3rdPersonCam.disableMouseInput();
     
     float roverMiddleHeight = rover.object.getSceneCenter().y;
-    rover1stPersonCam.setPosition(0, roverMiddleHeight + 50, 0);
-    rover1stPersonCam.lookAt(glm::vec3(1, 0, 1)); // random direction for now, make it look at normal
+    rover1stPersonCam.setPosition(rover.position.x, rover.position.y, rover.position.z);
+    rover1stPersonCam.lookAt(glm::vec3(rover.position.x + 1, rover.position.y, rover.position.z + 1)); // random direction for now, make it look at normal
     rover1stPersonCam.setNearClip(7.25);
     rover1stPersonCam.setFarClip(1000);
-    rover1stPersonCam.setFov(50);
+    rover1stPersonCam.setFov(65.5);
     rover1stPersonCam.disableMouseInput();
     
-    roverTopDownCam.setPosition(0, 160, 0);
+    roverTopDownCam.setPosition(rover.position.x, rover.position.y + 50, rover.position.z);
     roverTopDownCam.lookAt(rover.position);
     roverTopDownCam.setNearClip(0);
     roverTopDownCam.setFarClip(1000);
@@ -175,6 +183,34 @@ void ofApp::update(){
             
             rover.crash();
         }
+    } else if (octreePad2.intersect(rover.bounds, octreePad2.root, boxRtn)) {
+        if (rover.velocity.y >= -1.5) {
+            cout << "Landed on Pad 2 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = false;
+            hasLanded = true;
+            
+            rover.pause();
+        } else {
+            cout << "Crashed on Pad 2 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = true;
+            hasLanded = true;
+            
+            rover.crash();
+        }
+    } else if (octreePad3.intersect(rover.bounds, octreePad3.root, boxRtn)) {
+        if (rover.velocity.y >= -1.5) {
+            cout << "Landed on Pad 3 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = false;
+            hasLanded = true;
+            
+            rover.pause();
+        } else {
+            cout << "Crashed on Pad 3 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = true;
+            hasLanded = true;
+            
+            rover.crash();
+        }
     }
 
     fps = ofToString(ofGetFrameRate(), 2);
@@ -199,6 +235,8 @@ void ofApp::draw(){
             ofSetColor(0, 255, 0);
             terrain.drawWireframe();
             landingPad1.drawWireframe();
+            landingPad2.drawWireframe();
+            landingPad3.drawWireframe();
             rover.object.drawWireframe();
         }
         else if (lightingEnabled) {
@@ -206,6 +244,8 @@ void ofApp::draw(){
             ofSetColor(200, 200, 200);
             terrain.drawFaces();
             landingPad1.drawFaces();
+            landingPad2.drawFaces();
+            landingPad3.drawFaces();
             if (!landingHasCrashed) rover.draw();
             else rover.engine.draw();
             ofDisableLighting();
@@ -215,6 +255,8 @@ void ofApp::draw(){
             ofSetColor(255, 160, 0);
             terrain.drawFaces();
             landingPad1.drawFaces();
+            landingPad2.drawFaces();
+            landingPad3.drawFaces();
             if (!landingHasCrashed) rover.draw();
             else rover.engine.draw();
         }
@@ -225,6 +267,8 @@ void ofApp::draw(){
         ofSetColor(ofColor::white);
         octreeTerrain.draw(octreeLevels, 0);
         octreePad1.draw(octreeLevels, 0);
+        octreePad2.draw(octreeLevels, 0);
+        octreePad3.draw(octreeLevels, 0);
         rover.drawBoundingBox();
         ofFill();
     }

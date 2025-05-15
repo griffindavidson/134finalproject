@@ -23,16 +23,20 @@ public:
     void applyRotationForce(int force);
     void pause(); // pauses all physics
     void play(); // resumes all physics
+    void lockPosition(); // prevents rover from moving, used for crash()
+    
     void drawBoundingBox();
     virtual void update();
     virtual void draw();
     
 protected:
     bool paused;
+    bool positionLocked;
     
     void updateBounds();
     void integrate(); // physics integration
     void rotationIntegrate(); // y-axis rotation physics
+    
 };
 
 class Ship: public DynamicObject {

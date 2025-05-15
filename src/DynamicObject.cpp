@@ -19,6 +19,7 @@ DynamicObject::DynamicObject(std::string file) {
     angularVel = 0;
     angle = 0;
     paused = false;
+    positionLocked = false;
     updateBounds();
 }
 
@@ -62,7 +63,7 @@ void DynamicObject::integrate() {
     acceleration = forces + global;
     
     velocity += acceleration * dt;
-    position += velocity * dt;
+    if (!positionLocked) position += velocity * dt;
     
     forces.set(0); // clear forces for next frame, ignoring global
 }
@@ -85,6 +86,10 @@ void DynamicObject::pause() {
 
 void DynamicObject::play() {
     paused = false;
+}
+
+void DynamicObject::lockPosition() {
+    positionLocked = !positionLocked;
 }
 
 void DynamicObject::drawBoundingBox() {
@@ -132,7 +137,18 @@ void Ship::reset() {
 
 
 void Ship::initialize() {
-    position.set(0, 100, 0);
+    
+#include <random>
+
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(-200, 200);
+
+    int randomX = dist(gen);
+    int randomZ = dist(gen);
+    
+    position.set(randomX, 150, randomZ);
+    positionLocked = false;
     pause();
     thrust = 5;
     
@@ -172,6 +188,8 @@ void Ship::draw() {
 }
 
 void Ship::crash() {
+    lockPosition();
+    
     engine.sys->addForce(new ImpulseRadialForce(1000.0));
     
     engine.setEmitterType(RadialEmitter);
