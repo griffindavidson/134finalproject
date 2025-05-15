@@ -49,6 +49,7 @@ public:
     void draw() override;
     void reset();
     void crash();
+    glm::vec3 heading();
 private:
     void initialize();
 };

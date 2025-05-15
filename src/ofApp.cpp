@@ -108,36 +108,46 @@ void ofApp::update(){
     thrust = ofToString(rover.thrust / 5.0f * 100.0f) + "%";
     velocityLabel = ofToString(rover.velocity.y) + "m/s"; // to be removed
     
-    glm::vec3 forwardDir, rightDir;
+    //glm::vec3 forwardDir, rightDir;
 
-    if (theCam == &roverTopDownCam) {
-        // Top-down: "forward" is the direction the camera is pointing, flattened to XZ
-        forwardDir = glm::normalize(theCam->getLookAtDir());
-        forwardDir.y = 0;
-        forwardDir = glm::normalize(forwardDir);
-        rightDir = glm::normalize(glm::cross(forwardDir, glm::vec3(0,1,0)));
-    } else {
-        // 1st-person or 3rd-person: Use camera direction
-        forwardDir = glm::normalize(theCam->getLookAtDir());
-        forwardDir.y = 0;
-        forwardDir = glm::normalize(forwardDir);
-        rightDir = glm::normalize(glm::cross(forwardDir, glm::vec3(0,1,0)));
-    }
+    //if (theCam == &roverTopDownCam) {
+    //    // Top-down: "forward" is the direction the camera is pointing, flattened to XZ
+    //    forwardDir = glm::normalize(theCam->getLookAtDir());
+    //    forwardDir.y = 0;
+    //    forwardDir = glm::normalize(forwardDir);
+    //    rightDir = glm::normalize(glm::cross(forwardDir, glm::vec3(0,1,0)));
+    //} else {
+    //    // 1st-person or 3rd-person: Use camera direction
+    //    forwardDir = glm::normalize(theCam->getLookAtDir());
+    //    forwardDir.y = 0;
+    //    forwardDir = glm::normalize(forwardDir);
+    //    rightDir = glm::normalize(glm::cross(forwardDir, glm::vec3(0,1,0)));
+    //}
 
     // Movement input
     float moveSpeed = 2;
 
     if (keymap['w']) {
-        rover.applyForce(ofVec3f(forwardDir.x, forwardDir.y, forwardDir.z) * moveSpeed);
+        rover.applyForce(rover.heading() * moveSpeed);
     }
     if (keymap['s']) {
-        rover.applyForce(ofVec3f(-forwardDir.x, -forwardDir.y, -forwardDir.z) * moveSpeed);
+        rover.applyForce(-rover.heading() * moveSpeed);
     }
     if (keymap['a']) {
-        rover.applyForce(ofVec3f(-rightDir.x, -rightDir.y, -rightDir.z) * moveSpeed);
+        ofVec3f force = rover.heading() * moveSpeed;
+        glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0), glm::radians(90.0f), glm::vec3(0, 1, 0));
+
+        // Apply rotation to the vector
+        glm::vec4 rotated = rotMatrix * glm::vec4(force.x, force.y, force.z, 0.0f);
+        rover.applyForce(ofVec3f(rotated.x, rotated.y, rotated.z));
     }
     if (keymap['d']) {
-        rover.applyForce(ofVec3f(rightDir.x, rightDir.y, rightDir.z) * moveSpeed);
+        ofVec3f force = rover.heading() * moveSpeed;
+        glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0), glm::radians(-90.0f), glm::vec3(0, 1, 0));
+
+        // Apply rotation to the vector
+        glm::vec4 rotated = rotMatrix * glm::vec4(force.x, force.y, force.z, 0.0f);
+        rover.applyForce(ofVec3f(rotated.x, rotated.y, rotated.z));
     }
 
 
@@ -149,6 +159,8 @@ void ofApp::update(){
         rover.applyRotationForce(-15);
     }
     
+    // Zander: need to change altitude function so that it uses octree.intersect(ray)
+
     altitudeLabel = ofToString(getAltitude()) + "m";
     
     // COLLISION V2 - colliding with terrain results in instant fail
@@ -206,8 +218,10 @@ void ofApp::draw(){
             ofSetColor(200, 200, 200);
             terrain.drawFaces();
             landingPad1.drawFaces();
-            if (!landingHasCrashed) rover.draw();
-            else rover.engine.draw();
+            rover.draw();
+            ofDrawArrow(rover.position, rover.position + rover.heading() * 40); // draws the rover heading
+            // ofDrawArrow();
+            rover.engine.draw();
             ofDisableLighting();
         }
         else {

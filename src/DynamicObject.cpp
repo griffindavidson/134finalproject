@@ -184,3 +184,8 @@ void Ship::crash() {
     engine.sys->reset();
     engine.start();
 }
+
+glm::vec3 Ship::heading() {
+    glm::mat4 rot1 = glm::rotate(glm::mat4(1.0), glm::radians(angle), glm::vec3(0, 1, 0));
+    return glm::normalize(rot1 * glm::vec4(glm::vec3(0, 0, 1), 1));
+}
