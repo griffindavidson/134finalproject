@@ -10,24 +10,24 @@ void ofApp::setup(){
     ofEnableDepthTest();
     ofSetBackgroundColor(30, 30, 30); // Dark gray background
     
-    // Camera setup
+    // DEBUG Camera setup
     cam.setDistance(50);  // Start much further back
     cam.setNearClip(0.1);
-    cam.setFarClip(1000);
+    cam.setFarClip(5000);
     cam.setFov(60);
     cam.enableMouseInput();
     cam.setPosition(10, 10, 10);
     
-    theCam = &rover3rdPersonCam;
+    theCam = &cam;
     
     // Initialize lighting
     initLightingAndMaterials();
     
-    moonTerrain.load("geo/moon-houdini.obj");
-    moonTerrain.setScaleNormalization(false);
-    moonTerrain.setPosition(0, 0, 0);
-    octree.bUseFaces = true;
-    octree.create(moonTerrain.getMesh(0), 20);
+    terrain.load("geo/gameTerrain.obj");
+    terrain.setScaleNormalization(false);
+    terrain.setPosition(0, 0, 0);
+    octreeTerrain.bUseFaces = true;
+    octreeTerrain.create(terrain.getMesh(0), 20);
     
     rover.scale.set(0.05);
     rover.setGlobalForce(ofVec3f(0, -1.625, 0));
@@ -55,7 +55,7 @@ void ofApp::setup(){
     roverTopDownCam.disableMouseInput();
     
     gui.setup();
-    //gui.add(octreeLevels.set("Octree Levels", 0, 0, 20));
+    gui.add(octreeLevels.set("Octree Levels", 0, 0, 20));
     gui.add(fps.setup("FPS", ""));
     gui.add(altitudeLabel.setup("Altitude", ""));
     gui.add(thrust.setup("Thrust", ""));
@@ -99,10 +99,10 @@ void ofApp::update(){
         }
     }
 
-    
+    // "beautifies" thrust so its not some tiny number below 0
     if (rover.thrust <= 0) rover.thrust = 0.0f;
     thrust = ofToString(rover.thrust / 5.0f * 100.0f) + "%";
-    velocityLabel = ofToString(rover.velocity.y) + "m/s";
+    velocityLabel = ofToString(rover.velocity.y) + "m/s"; // to be removed
     
     glm::vec3 forwardDir, rightDir;
 
@@ -147,65 +147,14 @@ void ofApp::update(){
     
     altitudeLabel = ofToString(getAltitude()) + "m";
     
-    // COLLISION
-    vector<Box> leafBoxes;
-    octree.collectLeafBoxes(octree.root, leafBoxes);
-
-    // Get rover bounds (bottom Y and XZ min/max)
-    Vector3 rmin = rover.bounds.min();
-    Vector3 rmax = rover.bounds.max();
-    float roverBottomY = rmin.y();
-    ofVec2f roverMinXZ(rmin.x(), rmin.z());
-    ofVec2f roverMaxXZ(rmax.x(), rmax.z());
-
-    // Loop through octree leaf boxes
-    float epsilon = 0.5f;
-    for (const Box& leafBox : leafBoxes) {
-        Vector3 tmin = leafBox.min();
-        Vector3 tmax = leafBox.max();
-
-        float terrainTopY = tmax.y();
-        ofVec2f terrainMinXZ(tmin.x(), tmin.z());
-        ofVec2f terrainMaxXZ(tmax.x(), tmax.z());
-
-        // Check if rover is vertically close to the top of the terrain box
-        if (abs(roverBottomY - terrainTopY) < epsilon && rover.velocity.y <= 0) {
-            bool xOverlap = roverMaxXZ.x >= terrainMinXZ.x && roverMinXZ.x <= terrainMaxXZ.x;
-            bool zOverlap = roverMaxXZ.y >= terrainMinXZ.y && roverMinXZ.y <= terrainMaxXZ.y;
-
-            if (xOverlap && zOverlap) {
-                // Collision Impact detection
-                if (rover.velocity.y < -1.5f && !hasLanded) {
-                    cout << "Crash on terrain at Y = " << terrainTopY << endl;
-                    landingHasCrashed = true;
-                    hasLanded = true;
-                    
-                    rover.engine.sys->addForce(new ImpulseRadialForce(1000.0));
-                    
-                    rover.engine.setEmitterType(RadialEmitter);
-                    rover.engine.setParticleRadius(2.5);
-                    rover.engine.setVelocity(ofVec3f(0, 0, 0));
-                    rover.engine.setGroupSize(1000);
-                    rover.engine.setOneShot(true);
-                    rover.engine.setPosition(rover.position);
-                    
-                    rover.engine.sys->reset();
-                    rover.engine.start();
-                    
-                }
-                if (rover.velocity.y >= -1.5f && !hasLanded) {
-                    cout << "Landed on terrain at Y = " << terrainTopY << endl;
-                    landingHasCrashed = false;
-                    hasLanded = true;
-                }
-
-                float roverHeight = rmax.y() - rmin.y();
-                rover.position.y = terrainTopY; // or + roverHeight/2.0 if needed
-                rover.velocity.y = 0;
-                break;
-            }
-        }
-
+    // COLLISION V2 - colliding with terrain results in instant fail
+    vector<Box> boxRtn;
+    if (octreeTerrain.intersect(rover.bounds, octreeTerrain.root, boxRtn)) {
+        cout << "Crash on terrain at Y = " << rover.bounds.min().y() << endl;
+        landingHasCrashed = true;
+        hasLanded = true;
+        
+        rover.crash();
     }
 
     fps = ofToString(ofGetFrameRate(), 2);
@@ -224,17 +173,17 @@ void ofApp::draw(){
     // Draw the coordinate axes
     drawAxis(ofVec3f(0, 0, 0));
    
-    if (moonTerrain.getNumMeshes() > 0 && rover.object.getNumMeshes() > 0) {
+    if (terrain.getNumMeshes() > 0 && rover.object.getNumMeshes() > 0) {
         if (useWireframe) {
             ofDisableLighting();
             ofSetColor(0, 255, 0);
-            moonTerrain.drawWireframe();
+            terrain.drawWireframe();
             rover.object.drawWireframe();
         }
         else if (lightingEnabled) {
             ofEnableLighting();
             ofSetColor(200, 200, 200);
-            moonTerrain.drawFaces();
+            terrain.drawFaces();
             if (!landingHasCrashed) rover.draw();
             else rover.engine.draw();
             ofDisableLighting();
@@ -242,7 +191,7 @@ void ofApp::draw(){
         else {
             ofDisableLighting();
             ofSetColor(255, 160, 0);
-            moonTerrain.drawFaces();
+            terrain.drawFaces();
             if (!landingHasCrashed) rover.draw();
             else rover.engine.draw();
         }
@@ -251,7 +200,7 @@ void ofApp::draw(){
     if (octreeLevels > 0) {
         ofNoFill();
         ofSetColor(ofColor::white);
-        octree.draw(octreeLevels, 0);
+        octreeTerrain.draw(octreeLevels, 0);
         rover.drawBoundingBox();
         ofFill();
     }
@@ -284,20 +233,7 @@ void ofApp::keyPressed(int key){
         case 'r': {
             hasLanded = false;
             landingHasCrashed = false;
-            rover.position.set(0, 50, 0);
-            rover.velocity.set(0, 0, 0);
-            rover.angularVel = 0;
-            rover.thrust = 5;
-            rover.engine.setEmitterType(DirectionalEmitter);
-            rover.engine.setParticleRadius(5);
-            rover.engine.setVelocity(glm::vec3(0, -20, 0));
-            rover.engine.setGroupSize(1);
-            rover.engine.setOneShot(false);
-            rover.engine.fired = false;
-            rover.engine.sys->forces.clear();
-            rover.engine.sys->addForce(new GravityForce(glm::vec3(0, -7, 0)));
-            rover.engine.sys->addForce(new TurbulenceForce(glm::vec3(-3), glm::vec3(3)));
-            rover.pause();
+            rover.reset();
             break;
         }
         case 't': {
@@ -450,25 +386,6 @@ void ofApp::drawAxis(ofVec3f location) {
     ofPopMatrix();
 }
 
-float ofApp::getVerticalDistanceToTerrain(ofVec3f roverPos, const ofMesh& terrainMesh) {
-    float minXZDist = std::numeric_limits<float>::max();
-    float terrainYAtClosestXZ = 0;
-
-    for (int i = 0; i < terrainMesh.getNumVertices(); ++i) {
-        ofVec3f v = terrainMesh.getVertex(i);
-
-        // Distance in the XZ plane only
-        float xzDist = ofVec2f(v.x, v.z).distance(ofVec2f(roverPos.x, roverPos.z));
-
-        if (xzDist < minXZDist) {
-            minXZDist = xzDist;
-            terrainYAtClosestXZ = v.y;
-        }
-    }
-
-    return roverPos.y - terrainYAtClosestXZ;
-}
-
 void ofApp::updateCameras() {
     // Third-person camera still the same
     rover3rdPersonCam.setPosition(rover.position.x - 50, rover.position.y + 35, rover.position.z - 50);
@@ -502,7 +419,7 @@ float ofApp::getAltitude() {
     );
 
     vector<Box> nearbyBoxes;
-    octree.intersect(probeBox, octree.root, nearbyBoxes);
+    octreeTerrain.intersect(probeBox, octreeTerrain.root, nearbyBoxes);
 
     float roverBottomY = rmin.y();
     float maxTerrainY = -FLT_MAX;

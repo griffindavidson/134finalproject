@@ -33,12 +33,20 @@ class ofApp : public ofBaseApp{
     
         void initLightingAndMaterials();
         void drawAxis(ofVec3f location);
-        float getVerticalDistanceToTerrain(ofVec3f roverPos, const ofMesh& terrainMesh);
     
-        ofxAssimpModelLoader moonTerrain;
-        Octree octree;
+        ofxAssimpModelLoader terrain;
+        Octree octreeTerrain;
     
         Ship rover = Ship();
+    
+        ofxAssimpModelLoader landingPad1;
+        Octree octreePad1;
+    
+        ofxAssimpModelLoader landingPad2;
+        Octree octreePad2;
+        
+        ofxAssimpModelLoader landingPad3;
+        Octree octreePad3;
     
         void updateCameras();
         
@@ -48,6 +56,10 @@ class ofApp : public ofBaseApp{
         ofEasyCam rover3rdPersonCam; //id 1
         ofEasyCam rover1stPersonCam; // id 2
         ofEasyCam roverTopDownCam; // id 3
+    
+        ofEasyCam landing1Cam; // id 4
+        ofEasyCam landing2Cam; // id 4 // calculate and use closest camera as id 4
+        ofEasyCam landing3Cam; // id 4
     
         bool lightingEnabled = true;
         bool useWireframe = false;

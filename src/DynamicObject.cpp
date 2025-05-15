@@ -88,6 +88,8 @@ void DynamicObject::play() {
 }
 
 void DynamicObject::drawBoundingBox() {
+    ofPushMatrix();
+    ofSetColor(ofColor::white);
     Vector3 min = bounds.parameters[0];
     Vector3 max = bounds.parameters[1];
     Vector3 size = max - min;
@@ -97,40 +99,57 @@ void DynamicObject::drawBoundingBox() {
     float h = size.y();
     float d = size.z();
     ofDrawBox(p, w, h, d);
+    ofPopMatrix();
 }
 
 void DynamicObject::updateBounds() {
     ofVec3f sceneMin = object.getSceneMin();
     ofVec3f sceneMax = object.getSceneMax();
-    ofVec3f scaledMin = sceneMin * scale + position;
-    ofVec3f scaledMax = sceneMax * scale + position;
+    
+    ofVec3f scaledMin = sceneMin + position;
+    ofVec3f scaledMax = sceneMax + position;
 
-    bounds = Box(Vector3(scaledMin.x, scaledMin.y, scaledMin.z),
-                 Vector3(scaledMax.x, scaledMax.y, scaledMax.z));
+    // rover bounds are kinda weird..... this works close enough
+    bounds = Box(Vector3(scaledMin.x - 10.0, scaledMin.y - 5.0, scaledMin.z - 10.0),
+                 Vector3(scaledMax.x + 10.0, scaledMax.y + 5.0, scaledMax.z + 10.0));
 }
 
 
-Ship::Ship() : DynamicObject("geo/lander.obj") {
-   // add particle emitter stuff here for thrust
-    position.set(0, 50, 0);
-    pause();
-    thrust = 5;
-    
-    GravityForce *g = new GravityForce(glm::vec3(0, -7, 0));
-    TurbulenceForce *t = new TurbulenceForce(glm::vec3(-3), glm::vec3(3));
-    
-    engine.sys->addForce(g);
-    engine.sys->addForce(t);
-    
-    //shader.load("shaders/particle");
+Ship::Ship() : DynamicObject("geo/SpaceShipV1.obj") {
     engineSound.load("sounds/engine.mp3");
     engineSound.setVolume(0.25f);
     engineSound.setLoop(true);
+
+    initialize(); // shared config
+}
+
+void Ship::reset() {
+    velocity.set(0, 0, 0);
+    angularVel = 0;
+
+    initialize(); // shared config
+}
+
+
+void Ship::initialize() {
+    position.set(0, 100, 0);
+    pause();
+    thrust = 5;
     
-    engine.start();
-    engine.visible = false;
+    // shared config for emitter + dynamics
+    engine.setOneShot(false);
+    engine.fired = false; // reset explosion state
+    engine.setEmitterType(DirectionalEmitter);
+    engine.setParticleRadius(2.5);
     engine.setVelocity(glm::vec3(0, -20, 0));
-    engine.setParticleRadius(5);
+    engine.setGroupSize(1);
+    
+    engine.sys->forces.clear();
+    engine.sys->addForce(new GravityForce(glm::vec3(0, -7, 0)));
+    engine.sys->addForce(new TurbulenceForce(glm::vec3(-3), glm::vec3(3)));
+
+    engine.visible = false;
+    engine.start();
 }
 
 void Ship::update() {
@@ -152,3 +171,16 @@ void Ship::draw() {
     //ofEnableLighting();
 }
 
+void Ship::crash() {
+    engine.sys->addForce(new ImpulseRadialForce(1000.0));
+    
+    engine.setEmitterType(RadialEmitter);
+    engine.setParticleRadius(2.5);
+    engine.setVelocity(ofVec3f(0, 0, 0));
+    engine.setGroupSize(1000);
+    engine.setOneShot(true);
+    engine.setPosition(position);
+    
+    engine.sys->reset();
+    engine.start();
+}

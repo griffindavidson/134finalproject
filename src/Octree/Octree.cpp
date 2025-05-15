@@ -176,14 +176,3 @@ void Octree::drawLeafNodes(TreeNode & node) {
         }
     }
 }
-
-void Octree::collectLeafBoxes(TreeNode &node, vector<Box> &leafBoxes) {
-    if (node.children.empty()) {
-        leafBoxes.push_back(node.box);
-    } else {
-        for (TreeNode &child : node.children) {
-            collectLeafBoxes(child, leafBoxes);
-        }
-    }
-}
-

@@ -47,6 +47,10 @@ public:
     bool isPaused() { return paused; }
     void update() override;
     void draw() override;
+    void reset();
+    void crash();
+private:
+    void initialize();
 };
 
 
