@@ -1,7 +1,8 @@
 #include "ofApp.h"
 
 //--------------------------------------------------------------
-void ofApp::setup(){
+void ofApp::setup()
+{
     // Basic setup
     ofSetEscapeQuitsApp(false);
     ofSetFrameRate(60);
@@ -9,55 +10,63 @@ void ofApp::setup(){
     ofEnableSmoothing();
     ofEnableDepthTest();
     ofSetBackgroundColor(30, 30, 30); // Dark gray background
-    
+
     // DEBUG Camera setup
-    cam.setDistance(50);  // Start much further back
+    cam.setDistance(50); // Start much further back
     cam.setNearClip(0.1);
     cam.setFarClip(5000);
     cam.setFov(60);
     cam.enableMouseInput();
     cam.setPosition(10, 10, 10);
-    
+
     theCam = &rover3rdPersonCam;
-    
+
     // Initialize lighting
     initLightingAndMaterials();
-    
+
     terrain.load("geo/gameTerrain.obj");
     terrain.setScaleNormalization(false);
     terrain.setPosition(0, 0, 0);
     octreeTerrain.bUseFaces = true;
     octreeTerrain.create(terrain.getMesh(0), 20);
-    
-    loadModelAtPosition(landingPad1, "geo/gameLandingPadV1.obj", ofVec3f(50, 5, 50), landMesh1);
+
+    loadModelAtPosition(landingPad1, "geo/gameLandingPadV1.obj", ofVec3f(150, 8, 95), landMesh1);
     octreePad1.bUseFaces = true;
     octreePad1.create(landMesh1, 5);
-    
+
+    loadModelAtPosition(landingPad2, "geo/gameLandingPadV1.obj", ofVec3f(-200, 5, 75), landMesh2);
+    octreePad2.bUseFaces = true;
+    octreePad2.create(landMesh2, 5);
+
+    loadModelAtPosition(landingPad3, "geo/gameLandingPadV1.obj", ofVec3f(0, 10, -250), landMesh3);
+    octreePad3.bUseFaces = true;
+    octreePad3.create(landMesh3, 5);
+
     rover.scale.set(0.05);
     rover.setGlobalForce(ofVec3f(0, -1.625, 0));
-    
-    rover3rdPersonCam.setPosition(-75, 95, -75);
+
+    rover3rdPersonCam.setPosition(rover.position.x - 75, rover.position.y + 45, rover.position.y - 75);
     rover3rdPersonCam.lookAt(rover.position);
     rover3rdPersonCam.setNearClip(0.1);
     rover3rdPersonCam.setFarClip(1000);
     rover3rdPersonCam.setFov(65.5);
     rover3rdPersonCam.disableMouseInput();
-    
+
     float roverMiddleHeight = rover.object.getSceneCenter().y;
-    rover1stPersonCam.setPosition(0, roverMiddleHeight + 50, 0);
-    rover1stPersonCam.lookAt(glm::vec3(1, 0, 1)); // random direction for now, make it look at normal
+    rover1stPersonCam.setPosition(rover.position.x, rover.position.y, rover.position.z);
+    rover1stPersonCam.lookAt(glm::vec3(rover.position.x + 1, rover.position.y, rover.position.z + 1)); // random direction for now, make it look at normal
     rover1stPersonCam.setNearClip(7.25);
     rover1stPersonCam.setFarClip(1000);
-    rover1stPersonCam.setFov(50);
+    rover1stPersonCam.setFov(65.5);
     rover1stPersonCam.disableMouseInput();
-    
-    roverTopDownCam.setPosition(0, 160, 0);
+
+    roverTopDownCam.setPosition(rover.position.x, rover.position.y + 50, rover.position.z);
     roverTopDownCam.lookAt(rover.position);
     roverTopDownCam.setNearClip(0);
     roverTopDownCam.setFarClip(1000);
     roverTopDownCam.setFov(65.5);
     roverTopDownCam.disableMouseInput();
-    
+
     gui.setup();
     gui.add(octreeLevels.set("Octree Levels", 0, 0, 20));
     gui.add(fps.setup("FPS", ""));
@@ -68,72 +77,85 @@ void ofApp::setup(){
     gui.add(toggleCam.setup("C", "Toggle Cameras"));
     gui.add(pauseLabel.setup("ESC", "Pause"));
     gui.add(velocityLabel.setup("Velocity", ""));
-    
-    //cout << "Root box: (" << ofToString(octree.root.box.min().x()) << "," << ofToString(octree.root.box.min().y()) << ", " << ofToString(octree.root.box.min().z()) << ")" << " to " << "(" << ofToString(octree.root.box.max().x()) << "," << ofToString(octree.root.box.max().y()) << ", " << ofToString(octree.root.box.max().z()) << ")" << endl;
-    //cout << "Number of children: " << ofToString(octree.root.children.size()) << endl;
 
+    // cout << "Root box: (" << ofToString(octree.root.box.min().x()) << "," << ofToString(octree.root.box.min().y()) << ", " << ofToString(octree.root.box.min().z()) << ")" << " to " << "(" << ofToString(octree.root.box.max().x()) << "," << ofToString(octree.root.box.max().y()) << ", " << ofToString(octree.root.box.max().z()) << ")" << endl;
+    // cout << "Number of children: " << ofToString(octree.root.children.size()) << endl;
 }
 
 //--------------------------------------------------------------
-void ofApp::update(){
+void ofApp::update()
+{
     updateCameras();
     rover.update();
     rover.engine.setRate(0);
-    
-    if (!rover.isPaused()) {
-        if (keymap[' '] && rover.thrust > 0.0f) {
+
+    if (!rover.isPaused())
+    {
+        if (keymap[' '] && rover.thrust > 0.0f)
+        {
             // Apply physics and play engine sound
             rover.applyForce(ofVec3f(0, 5, 0));
             rover.thrust -= 0.01;
             rover.engine.setRate(20);
 
-            if (!rover.engineSound.isPlaying()) {
+            if (!rover.engineSound.isPlaying())
+            {
                 rover.engineSound.play();
             }
-        } else {
+        }
+        else
+        {
             // Stop sound if not thrusting
-            if (rover.engineSound.isPlaying()) {
+            if (rover.engineSound.isPlaying())
+            {
                 rover.engineSound.stop();
             }
         }
-    } else {
+    }
+    else
+    {
         // Ensure sound is stopped when paused
-        if (rover.engineSound.isPlaying()) {
+        if (rover.engineSound.isPlaying())
+        {
             rover.engineSound.stop();
         }
     }
 
     // "beautifies" thrust so its not some tiny number below 0
-    if (rover.thrust <= 0) rover.thrust = 0.0f;
+    if (rover.thrust <= 0)
+        rover.thrust = 0.0f;
     thrust = ofToString(rover.thrust / 5.0f * 100.0f) + "%";
     velocityLabel = ofToString(rover.velocity.y) + "m/s"; // to be removed
-    
-    //glm::vec3 forwardDir, rightDir;
 
-    //if (theCam == &roverTopDownCam) {
-    //    // Top-down: "forward" is the direction the camera is pointing, flattened to XZ
-    //    forwardDir = glm::normalize(theCam->getLookAtDir());
-    //    forwardDir.y = 0;
-    //    forwardDir = glm::normalize(forwardDir);
-    //    rightDir = glm::normalize(glm::cross(forwardDir, glm::vec3(0,1,0)));
-    //} else {
-    //    // 1st-person or 3rd-person: Use camera direction
-    //    forwardDir = glm::normalize(theCam->getLookAtDir());
-    //    forwardDir.y = 0;
-    //    forwardDir = glm::normalize(forwardDir);
-    //    rightDir = glm::normalize(glm::cross(forwardDir, glm::vec3(0,1,0)));
-    //}
+    // glm::vec3 forwardDir, rightDir;
+
+    // if (theCam == &roverTopDownCam) {
+    //     // Top-down: "forward" is the direction the camera is pointing, flattened to XZ
+    //     forwardDir = glm::normalize(theCam->getLookAtDir());
+    //     forwardDir.y = 0;
+    //     forwardDir = glm::normalize(forwardDir);
+    //     rightDir = glm::normalize(glm::cross(forwardDir, glm::vec3(0,1,0)));
+    // } else {
+    //     // 1st-person or 3rd-person: Use camera direction
+    //     forwardDir = glm::normalize(theCam->getLookAtDir());
+    //     forwardDir.y = 0;
+    //     forwardDir = glm::normalize(forwardDir);
+    //     rightDir = glm::normalize(glm::cross(forwardDir, glm::vec3(0,1,0)));
+    // }
 
     // Movement input
     float moveSpeed = 2;
 
-    if (keymap['w']) {
+    if (keymap['w'])
+    {
         rover.applyForce(rover.heading() * moveSpeed);
     }
-    if (keymap['s']) {
+    if (keymap['s'])
+    {
         rover.applyForce(-rover.heading() * moveSpeed);
     }
-    if (keymap['a']) {
+    if (keymap['a'])
+    {
         ofVec3f force = rover.heading() * moveSpeed;
         glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0), glm::radians(90.0f), glm::vec3(0, 1, 0));
 
@@ -141,7 +163,8 @@ void ofApp::update(){
         glm::vec4 rotated = rotMatrix * glm::vec4(force.x, force.y, force.z, 0.0f);
         rover.applyForce(ofVec3f(rotated.x, rotated.y, rotated.z));
     }
-    if (keymap['d']) {
+    if (keymap['d'])
+    {
         ofVec3f force = rover.heading() * moveSpeed;
         glm::mat4 rotMatrix = glm::rotate(glm::mat4(1.0), glm::radians(-90.0f), glm::vec3(0, 1, 0));
 
@@ -150,41 +173,85 @@ void ofApp::update(){
         rover.applyForce(ofVec3f(rotated.x, rotated.y, rotated.z));
     }
 
-
-    if (keymap['q']) { // ROTATE LEFT
+    if (keymap['q'])
+    { // ROTATE LEFT
         rover.applyRotationForce(15);
     }
-    
-    if (keymap['e']) { // ROTATE RIGHT
+
+    if (keymap['e'])
+    { // ROTATE RIGHT
         rover.applyRotationForce(-15);
     }
-    
+
     // Zander: need to change altitude function so that it uses octree.intersect(ray)
 
     altitudeLabel = ofToString(getAltitude()) + "m";
-    
+
     // COLLISION V2 - colliding with terrain results in instant fail
     vector<Box> boxRtn;
-    if (octreeTerrain.intersect(rover.bounds, octreeTerrain.root, boxRtn)) {
+    if (octreeTerrain.intersect(rover.bounds, octreeTerrain.root, boxRtn))
+    {
         cout << "Crash on terrain at Y = " << rover.bounds.min().y() << endl;
         landingHasCrashed = true;
         hasLanded = true;
-        
+
         rover.crash();
     }
-    
-    if (octreePad1.intersect(rover.bounds, octreePad1.root, boxRtn)) {
-        if (rover.velocity.y >= -1.5) {
+
+    if (octreePad1.intersect(rover.bounds, octreePad1.root, boxRtn))
+    {
+        if (rover.velocity.y >= -1.5)
+        {
             cout << "Landed on Pad 1 at Y = " << rover.bounds.min().y() << endl;
             landingHasCrashed = false;
             hasLanded = true;
-            
+
             rover.pause();
-        } else {
+        }
+        else
+        {
             cout << "Crashed on Pad 1 at Y = " << rover.bounds.min().y() << endl;
             landingHasCrashed = true;
             hasLanded = true;
-            
+
+            rover.crash();
+        }
+    }
+    else if (octreePad2.intersect(rover.bounds, octreePad2.root, boxRtn))
+    {
+        if (rover.velocity.y >= -1.5)
+        {
+            cout << "Landed on Pad 2 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = false;
+            hasLanded = true;
+
+            rover.pause();
+        }
+        else
+        {
+            cout << "Crashed on Pad 2 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = true;
+            hasLanded = true;
+
+            rover.crash();
+        }
+    }
+    else if (octreePad3.intersect(rover.bounds, octreePad3.root, boxRtn))
+    {
+        if (rover.velocity.y >= -1.5)
+        {
+            cout << "Landed on Pad 3 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = false;
+            hasLanded = true;
+
+            rover.pause();
+        }
+        else
+        {
+            cout << "Crashed on Pad 3 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = true;
+            hasLanded = true;
+
             rover.crash();
         }
     }
@@ -193,27 +260,32 @@ void ofApp::update(){
 }
 
 //--------------------------------------------------------------
-void ofApp::draw(){
-    
-    
+void ofApp::draw()
+{
+
     // Very obvious background color
     ofBackground(30, 30, 60); // Dark blue background
-    
+
     // Begin camera
     theCam->begin();
-    
+
     // Draw the coordinate axes
     drawAxis(ofVec3f(0, 0, 0));
-   
-    if (terrain.getNumMeshes() > 0 && rover.object.getNumMeshes() > 0) {
-        if (useWireframe) {
+
+    if (terrain.getNumMeshes() > 0 && rover.object.getNumMeshes() > 0)
+    {
+        if (useWireframe)
+        {
             ofDisableLighting();
             ofSetColor(0, 255, 0);
             terrain.drawWireframe();
             landingPad1.drawWireframe();
+            landingPad2.drawWireframe();
+            landingPad3.drawWireframe();
             rover.object.drawWireframe();
         }
-        else if (lightingEnabled) {
+        else if (lightingEnabled)
+        {
             ofEnableLighting();
             ofSetColor(200, 200, 200);
             terrain.drawFaces();
@@ -222,30 +294,44 @@ void ofApp::draw(){
             ofDrawArrow(rover.position, rover.position + rover.heading() * 40); // draws the rover heading
             // ofDrawArrow();
             rover.engine.draw();
+            landingPad2.drawFaces();
+            landingPad3.drawFaces();
+            if (!landingHasCrashed)
+                rover.draw();
+            else
+                rover.engine.draw();
             ofDisableLighting();
         }
-        else {
+        else
+        {
             ofDisableLighting();
             ofSetColor(255, 160, 0);
             terrain.drawFaces();
             landingPad1.drawFaces();
-            if (!landingHasCrashed) rover.draw();
-            else rover.engine.draw();
+            landingPad2.drawFaces();
+            landingPad3.drawFaces();
+            if (!landingHasCrashed)
+                rover.draw();
+            else
+                rover.engine.draw();
         }
     }
-    
-    if (octreeLevels > 0) {
+
+    if (octreeLevels > 0)
+    {
         ofNoFill();
         ofSetColor(ofColor::white);
         octreeTerrain.draw(octreeLevels, 0);
         octreePad1.draw(octreeLevels, 0);
+        octreePad2.draw(octreeLevels, 0);
+        octreePad3.draw(octreeLevels, 0);
         rover.drawBoundingBox();
         ofFill();
     }
-    
+
     // End camera
     theCam->end();
-    
+
     glDepthMask(false);
     ofSetColor(255);
     gui.draw();
@@ -253,135 +339,151 @@ void ofApp::draw(){
 }
 
 //--------------------------------------------------------------
-void ofApp::exit(){
-
+void ofApp::exit()
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::keyPressed(int key){
+void ofApp::keyPressed(int key)
+{
     // Use lowercase key (in case Shift or Caps Lock is on)
     int lowerKey = tolower(key);
-    
-    switch(lowerKey) {
-        case 'l': {
-            useWireframe = !useWireframe;
-            cout << "Wireframe mode: " << (useWireframe ? "ON" : "OFF") << endl;
+
+    switch (lowerKey)
+    {
+    case 'l':
+    {
+        useWireframe = !useWireframe;
+        cout << "Wireframe mode: " << (useWireframe ? "ON" : "OFF") << endl;
+        break;
+    }
+    case 'r':
+    {
+        hasLanded = false;
+        landingHasCrashed = false;
+        rover.reset();
+        break;
+    }
+    case 't':
+    {
+        hideGUI = !hideGUI;
+        break;
+    }
+    case 'c':
+    {
+        if (camID == 1)
+        {
+            camID = 2;
+            theCam = &rover3rdPersonCam;
             break;
         }
-        case 'r': {
-            hasLanded = false;
-            landingHasCrashed = false;
-            rover.reset();
+        else if (camID == 2)
+        {
+            camID = 3;
+            theCam = &rover1stPersonCam;
             break;
         }
-        case 't': {
-            hideGUI = !hideGUI;
+        else
+        {
+            camID = 1;
+            theCam = &roverTopDownCam;
             break;
         }
-        case 'c': {
-            if (camID == 1) {
-                camID = 2;
-                theCam = &rover3rdPersonCam;
-                break;
-            } else if (camID == 2) {
-                camID = 3;
-                theCam = &rover1stPersonCam;
-                break;
-            } else {
-                camID = 1;
-                theCam = &roverTopDownCam;
-                break;
-            }
+        break;
+    }
+    case OF_KEY_ESC:
+    {
+        switch (rover.isPaused())
+        {
+        case true:
+        {
+            rover.play();
             break;
         }
-        case OF_KEY_ESC: {
-            switch(rover.isPaused()) {
-                case true: {
-                    rover.play();
-                    break;
-                }
-                case false: {
-                    rover.pause();
-                    break;
-                }
-            }
+        case false:
+        {
+            rover.pause();
+            break;
+        }
         }
     }
-    
+    }
+
     keymap[key] = true;
 }
 
 //--------------------------------------------------------------
-void ofApp::keyReleased(int key){
+void ofApp::keyReleased(int key)
+{
     keymap[key] = false;
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseMoved(int x, int y ){
-
+void ofApp::mouseMoved(int x, int y)
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseDragged(int x, int y, int button){
-
+void ofApp::mouseDragged(int x, int y, int button)
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::mousePressed(int x, int y, int button){
-
+void ofApp::mousePressed(int x, int y, int button)
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseReleased(int x, int y, int button){
-
+void ofApp::mouseReleased(int x, int y, int button)
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY){
-
+void ofApp::mouseScrolled(int x, int y, float scrollX, float scrollY)
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseEntered(int x, int y){
-
+void ofApp::mouseEntered(int x, int y)
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::mouseExited(int x, int y){
-
+void ofApp::mouseExited(int x, int y)
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::windowResized(int w, int h){
-
+void ofApp::windowResized(int w, int h)
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::gotMessage(ofMessage msg){
-
+void ofApp::gotMessage(ofMessage msg)
+{
 }
 
 //--------------------------------------------------------------
-void ofApp::dragEvent(ofDragInfo dragInfo){ 
-
+void ofApp::dragEvent(ofDragInfo dragInfo)
+{
 }
 
-void ofApp::initLightingAndMaterials() {
+void ofApp::initLightingAndMaterials()
+{
 
     static float ambient[] =
-    { .5f, .5f, .5, 1.0f };
+        {.5f, .5f, .5, 1.0f};
     static float diffuse[] =
-    { 1.0f, 1.0f, 1.0f, 1.0f };
+        {1.0f, 1.0f, 1.0f, 1.0f};
 
     static float position[] =
-    {5.0, 5.0, 5.0, 0.0 };
+        {5.0, 5.0, 5.0, 0.0};
 
     static float lmodel_ambient[] =
-    { 1.0f, 1.0f, 1.0f, 1.0f };
+        {1.0f, 1.0f, 1.0f, 1.0f};
 
     static float lmodel_twoside[] =
-    { GL_TRUE };
-
+        {GL_TRUE};
 
     glLightfv(GL_LIGHT0, GL_AMBIENT, ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuse);
@@ -391,17 +493,17 @@ void ofApp::initLightingAndMaterials() {
     glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuse);
     glLightfv(GL_LIGHT1, GL_POSITION, position);
 
-
     glLightModelfv(GL_LIGHT_MODEL_AMBIENT, lmodel_ambient);
     glLightModelfv(GL_LIGHT_MODEL_TWO_SIDE, lmodel_twoside);
 
     glEnable(GL_LIGHTING);
     glEnable(GL_LIGHT0);
-//    glEnable(GL_LIGHT1);
+    //    glEnable(GL_LIGHT1);
     glShadeModel(GL_SMOOTH);
 }
 
-void ofApp::drawAxis(ofVec3f location) {
+void ofApp::drawAxis(ofVec3f location)
+{
 
     ofPushMatrix();
     ofTranslate(location);
@@ -411,7 +513,6 @@ void ofApp::drawAxis(ofVec3f location) {
     // X Axis
     ofSetColor(ofColor(255, 0, 0));
     ofDrawLine(ofPoint(0, 0, 0), ofPoint(1, 0, 0));
-    
 
     // Y Axis
     ofSetColor(ofColor(0, 255, 0));
@@ -424,7 +525,8 @@ void ofApp::drawAxis(ofVec3f location) {
     ofPopMatrix();
 }
 
-void ofApp::updateCameras() {
+void ofApp::updateCameras()
+{
     // Third-person camera still the same
     rover3rdPersonCam.setPosition(rover.position.x - 50, rover.position.y + 35, rover.position.z - 50);
     rover3rdPersonCam.lookAt(rover.position);
@@ -432,20 +534,21 @@ void ofApp::updateCameras() {
     // First-person camera (rotate with ship)
     float heightOffset = rover.object.getSceneCenter().y + 4;
     rover1stPersonCam.setPosition(rover.position.x, rover.position.y + heightOffset, rover.position.z);
-    
+
     // Calculate forward vector based on ship's Y rotation
-    float radians = ofDegToRad(rover.angle);  // convert angle to radians
-    glm::vec3 forward = glm::normalize(glm::vec3(sin(radians), 0, cos(radians)));  // forward in local Z
+    float radians = ofDegToRad(rover.angle);                                      // convert angle to radians
+    glm::vec3 forward = glm::normalize(glm::vec3(sin(radians), 0, cos(radians))); // forward in local Z
 
     glm::vec3 lookAtTarget = rover1stPersonCam.getPosition() + forward;
 
     rover1stPersonCam.lookAt(lookAtTarget);
-    
+
     roverTopDownCam.setPosition(rover.position.x, rover.position.y + 100, rover.position.z);
     roverTopDownCam.lookAt(rover.position);
 }
 
-float ofApp::getAltitude() {
+float ofApp::getAltitude()
+{
     Vector3 rmin = rover.bounds.min();
     Vector3 rmax = rover.bounds.max();
 
@@ -453,8 +556,7 @@ float ofApp::getAltitude() {
     float probeDepth = FLT_MAX; // adjust based on terrain depth range
     Box probeBox(
         Vector3(rmin.x(), rmin.y() - probeDepth, rmin.z()),
-        Vector3(rmax.x(), rmin.y(), rmax.z())
-    );
+        Vector3(rmax.x(), rmin.y(), rmax.z()));
 
     vector<Box> nearbyBoxes;
     octreeTerrain.intersect(probeBox, octreeTerrain.root, nearbyBoxes);
@@ -462,21 +564,25 @@ float ofApp::getAltitude() {
     float roverBottomY = rmin.y();
     float maxTerrainY = -FLT_MAX;
 
-    for (const Box& b : nearbyBoxes) {
+    for (const Box &b : nearbyBoxes)
+    {
         float y = b.max().y();
-        if (y <= roverBottomY && y > maxTerrainY) {
+        if (y <= roverBottomY && y > maxTerrainY)
+        {
             maxTerrainY = y;
         }
     }
 
-    if (maxTerrainY > -FLT_MAX) {
+    if (maxTerrainY > -FLT_MAX)
+    {
         return roverBottomY - maxTerrainY;
     }
 
     return -1.0f; // no terrain found below
 }
 
-void ofApp::loadModelAtPosition(ofxAssimpModelLoader &model, const std::string &path, const ofVec3f &pos, ofMesh &worldMeshOut) {
+void ofApp::loadModelAtPosition(ofxAssimpModelLoader &model, const std::string &path, const ofVec3f &pos, ofMesh &worldMeshOut)
+{
     // Load and position model
     model.load(path);
     model.setScaleNormalization(false);
@@ -487,14 +593,17 @@ void ofApp::loadModelAtPosition(ofxAssimpModelLoader &model, const std::string &
 
     // Build a world-transformed mesh
     worldMeshOut.clear();
-    for (int i = 0; i < model.getMeshCount(); i++) {
+    for (int i = 0; i < model.getMeshCount(); i++)
+    {
         ofMesh local = model.getMesh(i);
-        for (int j = 0; j < local.getNumVertices(); j++) {
+        for (int j = 0; j < local.getNumVertices(); j++)
+        {
             ofVec3f v = local.getVertex(j);
-            v = v * transform;  // apply transformation
+            v = v * transform; // apply transformation
             worldMeshOut.addVertex(v);
         }
-        for (int j = 0; j < local.getNumIndices(); j++) {
+        for (int j = 0; j < local.getNumIndices(); j++)
+        {
             worldMeshOut.addIndex(local.getIndex(j));
         }
     }

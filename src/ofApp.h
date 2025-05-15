@@ -45,9 +45,11 @@ class ofApp : public ofBaseApp{
         Octree octreePad1;
     
         ofxAssimpModelLoader landingPad2;
+        ofMesh landMesh2;
         Octree octreePad2;
         
         ofxAssimpModelLoader landingPad3;
+        ofMesh landMesh3;
         Octree octreePad3;
     
         void updateCameras();
