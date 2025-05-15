@@ -21,8 +21,8 @@ public:
     void setGlobalForce(ofVec3f force);
     void applyForce(ofVec3f force);
     void applyRotationForce(int force);
-    void pause();
-    void play();
+    void pause(); // pauses all physics
+    void play(); // resumes all physics
     void drawBoundingBox();
     virtual void update();
     virtual void draw();

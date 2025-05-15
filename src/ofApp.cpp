@@ -18,7 +18,7 @@ void ofApp::setup(){
     cam.enableMouseInput();
     cam.setPosition(10, 10, 10);
     
-    theCam = &cam;
+    theCam = &rover3rdPersonCam;
     
     // Initialize lighting
     initLightingAndMaterials();
@@ -28,6 +28,10 @@ void ofApp::setup(){
     terrain.setPosition(0, 0, 0);
     octreeTerrain.bUseFaces = true;
     octreeTerrain.create(terrain.getMesh(0), 20);
+    
+    loadModelAtPosition(landingPad1, "geo/gameLandingPadV1.obj", ofVec3f(50, 5, 50), landMesh1);
+    octreePad1.bUseFaces = true;
+    octreePad1.create(landMesh1, 5);
     
     rover.scale.set(0.05);
     rover.setGlobalForce(ofVec3f(0, -1.625, 0));
@@ -156,6 +160,22 @@ void ofApp::update(){
         
         rover.crash();
     }
+    
+    if (octreePad1.intersect(rover.bounds, octreePad1.root, boxRtn)) {
+        if (rover.velocity.y >= -1.5) {
+            cout << "Landed on Pad 1 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = false;
+            hasLanded = true;
+            
+            rover.pause();
+        } else {
+            cout << "Crashed on Pad 1 at Y = " << rover.bounds.min().y() << endl;
+            landingHasCrashed = true;
+            hasLanded = true;
+            
+            rover.crash();
+        }
+    }
 
     fps = ofToString(ofGetFrameRate(), 2);
 }
@@ -178,12 +198,14 @@ void ofApp::draw(){
             ofDisableLighting();
             ofSetColor(0, 255, 0);
             terrain.drawWireframe();
+            landingPad1.drawWireframe();
             rover.object.drawWireframe();
         }
         else if (lightingEnabled) {
             ofEnableLighting();
             ofSetColor(200, 200, 200);
             terrain.drawFaces();
+            landingPad1.drawFaces();
             if (!landingHasCrashed) rover.draw();
             else rover.engine.draw();
             ofDisableLighting();
@@ -192,6 +214,7 @@ void ofApp::draw(){
             ofDisableLighting();
             ofSetColor(255, 160, 0);
             terrain.drawFaces();
+            landingPad1.drawFaces();
             if (!landingHasCrashed) rover.draw();
             else rover.engine.draw();
         }
@@ -201,6 +224,7 @@ void ofApp::draw(){
         ofNoFill();
         ofSetColor(ofColor::white);
         octreeTerrain.draw(octreeLevels, 0);
+        octreePad1.draw(octreeLevels, 0);
         rover.drawBoundingBox();
         ofFill();
     }
@@ -436,4 +460,28 @@ float ofApp::getAltitude() {
     }
 
     return -1.0f; // no terrain found below
+}
+
+void ofApp::loadModelAtPosition(ofxAssimpModelLoader &model, const std::string &path, const ofVec3f &pos, ofMesh &worldMeshOut) {
+    // Load and position model
+    model.load(path);
+    model.setScaleNormalization(false);
+    model.setPosition(pos.x, pos.y, pos.z);
+
+    // Get full transform matrix to apply to vertices
+    ofMatrix4x4 transform = model.getModelMatrix();
+
+    // Build a world-transformed mesh
+    worldMeshOut.clear();
+    for (int i = 0; i < model.getMeshCount(); i++) {
+        ofMesh local = model.getMesh(i);
+        for (int j = 0; j < local.getNumVertices(); j++) {
+            ofVec3f v = local.getVertex(j);
+            v = v * transform;  // apply transformation
+            worldMeshOut.addVertex(v);
+        }
+        for (int j = 0; j < local.getNumIndices(); j++) {
+            worldMeshOut.addIndex(local.getIndex(j));
+        }
+    }
 }

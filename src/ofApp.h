@@ -33,6 +33,7 @@ class ofApp : public ofBaseApp{
     
         void initLightingAndMaterials();
         void drawAxis(ofVec3f location);
+        void loadModelAtPosition(ofxAssimpModelLoader &model, const std::string &path, const ofVec3f &pos, ofMesh &worldMeshOut);
     
         ofxAssimpModelLoader terrain;
         Octree octreeTerrain;
@@ -40,6 +41,7 @@ class ofApp : public ofBaseApp{
         Ship rover = Ship();
     
         ofxAssimpModelLoader landingPad1;
+        ofMesh landMesh1;
         Octree octreePad1;
     
         ofxAssimpModelLoader landingPad2;
