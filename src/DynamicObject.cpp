@@ -115,7 +115,7 @@ void DynamicObject::updateBounds() {
     ofVec3f scaledMax = sceneMax + position;
 
     // rover bounds are kinda weird..... this works close enough
-    bounds = Box(Vector3(scaledMin.x - 10.0, scaledMin.y - 5.0, scaledMin.z - 10.0),
+    bounds = Box(Vector3(scaledMin.x - 10.0, scaledMin.y - 4.0, scaledMin.z - 10.0),
                  Vector3(scaledMax.x + 10.0, scaledMax.y + 5.0, scaledMax.z + 10.0));
 }
 
