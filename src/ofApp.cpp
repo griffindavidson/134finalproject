@@ -38,20 +38,40 @@ void ofApp::setup()
     landing1light.setSpotlight();
     landing1light.setScale(.05);
     landing1light.setSpotlightCutOff(30);
-    landing1light.setPosition(150, 8 + 15, 95);
-    landing1light.rotateDeg(90,glm::vec3(0,0,1));
+    landing1light.setPosition(150, 8 + 50, 95);
+    landing1light.rotate(-90,ofVec3f(1,0,0));
 
     landing2light.setup();
     landing2light.enable();
     landing2light.setSpotlight();
     landing2light.setScale(.05);
     landing2light.setSpotlightCutOff(30);
+    landing2light.setPosition(-200, 160 + 50, 75);
+    landing2light.rotate(-90, ofVec3f(1, 0, 0));
 
     landing3light.setup();
     landing3light.enable();
     landing3light.setSpotlight();
     landing3light.setScale(.05);
     landing3light.setSpotlightCutOff(30);
+    landing3light.setPosition(0, 45+50, -250);
+    landing3light.rotate(-90, ofVec3f(1, 0, 0)); // points downward at the pads
+
+    roverLight.setup();
+    roverLight.enable();
+    roverLight.setSpotlight();
+    roverLight.setScale(0.05);
+    roverLight.setSpotlightCutOff(30);
+    roverLight.setPosition(rover.position.x, rover.position.y + 50, rover.position.z);
+    roverLight.rotate(-90, ofVec3f(1, 0, 0));
+
+    roverHeadLamp.setup();
+    roverHeadLamp.enable();
+    roverHeadLamp.setSpotlight();
+    roverHeadLamp.setScale(0.05);
+    roverHeadLamp.setSpotlightCutOff(20);
+    roverHeadLamp.setPosition(rover.position);
+    // roverHeadLamp.rotate(-90, ofVec3f(1, 0, 0));
 
     loadModelAtPosition(landingPad1, "geo/gameLandingPadV1.obj", ofVec3f(150, 8, 95), landMesh1);
     landing1Cam.setPosition(glm::vec3(150+15, 8+5, 95+15)); // set camera position
@@ -305,6 +325,9 @@ void ofApp::draw(){
             ofSetColor(ofColor::green);
             ofDrawArrow(rover.position, landingPad3.getPosition());
             ofSetColor(ofColor::white);
+            landing1light.draw();
+            landing2light.draw();
+            landing3light.draw();
             if (!landingHasCrashed) rover.draw();
             else rover.engine.draw();
             ofDisableLighting();
@@ -561,6 +584,10 @@ void ofApp::updateCameras() {
     landing1Cam.lookAt(rover.position);
     landing2Cam.lookAt(rover.position);
     landing3Cam.lookAt(rover.position);
+    // RoverLights
+    roverLight.setPosition(rover.position.x, rover.position.y + 50, rover.position.z);
+    roverHeadLamp.setPosition(rover.position);
+    roverHeadLamp.lookAt(rover.position + rover.heading()*20);
 }
 /*
 float ofApp::getAltitude() {
