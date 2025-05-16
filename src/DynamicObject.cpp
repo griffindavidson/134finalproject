@@ -47,7 +47,7 @@ void DynamicObject::update() {
 void DynamicObject::draw() {
     ofPushMatrix();
     object.setScale(scale.x, scale.y, scale.z);
-    object.setRotation(0, angle + 180, 0, 1, 0);
+    object.setRotation(0, angle, 0, 1, 0);
     object.drawFaces();
     ofPopMatrix();
 }
@@ -147,7 +147,7 @@ void Ship::initialize() {
     int randomX = dist(gen);
     int randomZ = dist(gen);
     
-    position.set(randomX, 150, randomZ);
+    position.set(randomX, 200, randomZ);
     positionLocked = false;
     pause();
     thrust = 10; // Zander: doubled fuel time after play testing
@@ -205,5 +205,5 @@ void Ship::crash() {
 
 glm::vec3 Ship::heading() {
     glm::mat4 rot1 = glm::rotate(glm::mat4(1.0), glm::radians(angle), glm::vec3(0, 1, 0));
-    return glm::normalize(rot1 * glm::vec4(glm::vec3(0, 0, 1), 1));
+    return -glm::normalize(rot1 * glm::vec4(glm::vec3(0, 0, 1), 1));
 }

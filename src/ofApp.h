@@ -30,7 +30,7 @@ class ofApp : public ofBaseApp{
         float getAltitude();
     
         map<int, bool> keymap;
-    
+        
         void initLightingAndMaterials();
         void drawAxis(ofVec3f location);
         void loadModelAtPosition(ofxAssimpModelLoader &model, const std::string &path, const ofVec3f &pos, ofMesh &worldMeshOut);
@@ -64,7 +64,13 @@ class ofApp : public ofBaseApp{
         ofEasyCam landing1Cam; // id 4
         ofEasyCam landing2Cam; // id 4 // calculate and use closest camera as id 4
         ofEasyCam landing3Cam; // id 4
-    
+        
+        bool daytime = false; // true: use sunlight to light entire scene false: use rover and landing pad lights
+        ofLight landing1light;
+        ofLight landing2light;
+        ofLight landing3light;
+        ofLight roverLight;
+        ofLight roverHeadLamp;
         bool lightingEnabled = true;
         bool useWireframe = false;
         bool showOriginCube = false;
